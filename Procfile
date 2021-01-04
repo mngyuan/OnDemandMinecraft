@@ -1,1 +1,1 @@
-web gunicorn server:app
+web gunicorn server:app & python bot.py & wait -n
