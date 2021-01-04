@@ -14,7 +14,7 @@ client = boto3.client(
 
 @bot.command()
 async def start(ctx):
-    message = manageServer(client)
+    message = manageServer(client, ctx)
     await ctx.send(message)
 
 bot.run(Config.DISCORD_BOT_TOKEN)

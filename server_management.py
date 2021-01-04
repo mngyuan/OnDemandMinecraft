@@ -12,7 +12,7 @@ sshClient = paramiko.SSHClient()
 sshClient.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 #Waits for the server to reach a valid state so that commands can be executed on the server
-def serverWaitOk(instanceIp, client):
+def serverWaitOk(instanceIp, client, success_cb):
 
     checksPassed = False
     status = 'initializing'
@@ -28,12 +28,12 @@ def serverWaitOk(instanceIp, client):
         time.sleep(5)
     
     if checksPassed:
-        initServerCommands(instanceIp)
+        initServerCommands(instanceIp, success_cb)
     else:
         print('An error has occurred booting the server')
     
 #SSH connects to server and executes command to boot minecraft server
-def initServerCommands(instanceIp):
+def initServerCommands(instanceIp, success_cb):
     # Connect/ssh to an instance
     try:
         # Here 'ubuntu' is user name and 'instance_ip' is public IP of EC2
@@ -42,6 +42,7 @@ def initServerCommands(instanceIp):
         # Execute a command(cmd) after connecting/ssh to an instance
         stdin, stdout, stderr = sshClient.exec_command("screen -dmS minecraft bash -c 'sudo java " + Config.MEMORY_ALLOCATION + "-jar server.jar nogui'")
         print("COMMAND EXECUTED")
+        success_cb()
         # close the client connection once the job is done
         sshClient.close()
 
@@ -49,7 +50,7 @@ def initServerCommands(instanceIp):
         print('Error running server commands')
 
 #Gets IP Address for return to webpage otherwise boots server
-def manageServer(client):
+def manageServer(client, discord_ctx):
     returnString = 'ERROR'
 
     instanceIds = [Config.INSTANCE_ID]
@@ -69,7 +70,7 @@ def manageServer(client):
 
         if (stateName == 'stopped') or (stateName == 'shutting-down'):
             #SETUP MULTIPROCESSING HERE INSTEAD OF REDIS
-            returnString = startServer(client)
+            returnString = startServer(client, discord_ctx)
         elif stateName == 'running':
             returnString = 'IP: ' + instance['PublicIpAddress']
         else:
@@ -77,7 +78,7 @@ def manageServer(client):
     return returnString
 
 #Starts the specified AWS Instance from the configuration
-def startServer(client):
+def startServer(client, discord_ctx):
     #Gets proper variables to attempt to instantiate EC2 instance and start minecraft server
     returnString = 'ERROR'
     instanceIds = [Config.INSTANCE_ID]
@@ -109,7 +110,7 @@ def startServer(client):
     ipAddress = instance['PublicIpAddress']
     returnString = 'Server is starting, this may take a few minutes.\nIP: ' + ipAddress
     #SETUP MULTIPROCESSING HERE INSTEAD OF REDIS
-    p = Process(target=serverWaitOk, args=(ipAddress, client))
+    p = Process(target=serverWaitOk, args=(ipAddress, client, lambda: discord_ctx.send('Server should now be up.')))
     p.start()
     return returnString
 
