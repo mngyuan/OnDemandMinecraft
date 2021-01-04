@@ -1,0 +1,20 @@
+import discord
+from discord.ext import commands
+from configuration import Config
+from server_management import manageServer
+import boto3
+
+bot = commands.Bot(command_prefix='>')
+
+@bot.command()
+async def start(ctx):
+    client = boto3.client(
+        'ec2',
+        aws_access_key_id=Config.ACCESS_KEY,
+        aws_secret_access_key=Config.SECRET_KEY,
+        region_name=Config.ec2_region
+    )
+    message = manageServer(client)
+    await ctx.send(message)
+
+bot.run('MzIwMDkzOTA0Mzk5NzYxNDA4.WTEMrQ.pyZG23SPP3B3EQ_WsK56AJu1vog')
