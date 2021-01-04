@@ -3,6 +3,7 @@ from multiprocessing import Process
 import time
 import paramiko
 import os
+import asyncio
 
 #Paraminko ssh information
 dirname = os.path.dirname(__file__)
@@ -42,9 +43,9 @@ def initServerCommands(instanceIp, success_cb):
         # Execute a command(cmd) after connecting/ssh to an instance
         stdin, stdout, stderr = sshClient.exec_command("screen -dmS minecraft bash -c 'sudo java " + Config.MEMORY_ALLOCATION + "-jar server.jar nogui'")
         print("COMMAND EXECUTED")
-        success_cb()
         # close the client connection once the job is done
         sshClient.close()
+        asyncio.run(success_cb())
 
     except:
         print('Error running server commands')
